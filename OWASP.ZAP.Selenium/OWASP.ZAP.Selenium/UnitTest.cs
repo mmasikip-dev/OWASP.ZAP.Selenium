@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,13 +14,17 @@ namespace OWASP.ZAP.Selenium
     [TestFixture]
     public class UnitTest
     {
-        [Test]
-        public void OWASPZAPSample()
+        const string ZAP_ADDRESS = "127.0.0.1";
+        const int ZAP_PORT = 8080;
+        const string ZAP_API_KEY = "qkt80fuj60usrvleljq0le468b";
+        public static ClientApi ZapApi;
+        private IWebDriver _driver;
+
+        [SetUp]
+        public void BeforeTestRun()
         {
-            //ZAP VARIABLES
-            var zapAddress = "127.0.0.1";
-            var zapPort = 8080;
-            var zapAPIKey = "qkt80fuj60usrvleljq0le468b";
+            //INITIALIZE ZAP API
+            ZapApi = new ClientApi(ZAP_ADDRESS, ZAP_PORT, ZAP_API_KEY);
 
             //SET TO HIDE CONSOLE
             var chromeDriverService = ChromeDriverService.CreateDefaultService();
@@ -28,7 +33,10 @@ namespace OWASP.ZAP.Selenium
             //SET OWASP ZAP PROXY
             var proxy = new Proxy
             {
-                HttpProxy = $"{zapAddress}:{zapPort}"
+                Kind = ProxyKind.Manual,
+                IsAutoDetect = false,
+                HttpProxy = $"{ZAP_ADDRESS}:{ZAP_PORT}",
+                SslProxy = $"{ZAP_ADDRESS}:{ZAP_PORT}"
             };
 
             //SET CHROME OPTIONS AND PROXY
@@ -38,21 +46,32 @@ namespace OWASP.ZAP.Selenium
             chromeOptions.Proxy = proxy;
 
             //INITIALIZE DRIVER
-            var driver = new ChromeDriver(chromeDriverService, chromeOptions);
-
-            //NAVIGATE TO TARGET URL
-            driver.Navigate().GoToUrl("https://online.asb.co.nz/apply/join/asb");
-
-            //INITIALIZE ZAP API
-            var clientApi = new ClientApi(zapAddress, zapPort, zapAPIKey);
-
-            WaitForPassiveScanToComplete(clientApi);
-
-            //QUIT DRIVER
-            driver.Quit();
+            _driver = new ChromeDriver(chromeDriverService, chromeOptions);
         }
 
-        private static void WaitForPassiveScanToComplete(ClientApi api)
+        [Test]
+        public void OWASPZAPSample()
+        {
+            //NAVIGATE TO TARGET URL
+            _driver.Navigate().GoToUrl("https://online.asb.co.nz/apply/join/asb");
+
+            //WaitForPassiveScanToComplete(ZapApi);
+        }
+
+        [TearDown]
+        public void AfterTestRun()
+        {
+            WriteZapHtmlReport("C:\\Temp\\report.html", ZapApi.core.htmlreport());
+            ZapApi.Dispose();
+            _driver.Quit();
+        }
+
+        private void WriteZapHtmlReport(string path, byte[] bytes)
+        {
+            File.WriteAllBytes(path, bytes);
+        }
+
+        private void WaitForPassiveScanToComplete(ClientApi api)
         {
             Console.WriteLine("--- Waiting for passive scan to complete --- ");
 
