@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Text;
-using System.Threading.Tasks;
+using System.Threading;
 using NUnit.Framework;
 using OpenQA.Selenium;
 using OpenQA.Selenium.Chrome;
@@ -19,6 +16,7 @@ namespace OWASP.ZAP.Selenium
         const string ZAP_ADDRESS = "127.0.0.1";
         const int ZAP_PORT = 8081;
         const string ZAP_API_KEY = "5ste6eglkhh83lvu263jqju2o3";
+        const string TARGET_URL = "https://online.asb.co.nz/apply/join/asb";
         public static ClientApi ZapApi;
         private IWebDriver _driver;
         private Process Process;
@@ -66,9 +64,11 @@ namespace OWASP.ZAP.Selenium
         public void OWASPZAPSample()
         {
             //NAVIGATE TO TARGET URL
-            _driver.Navigate().GoToUrl("https://online.asb.co.nz/apply/join/asb");
-            EnablePassiveScan();
+            _driver.Navigate().GoToUrl(TARGET_URL);
+            StartPassiveScan();
             WaitForPassiveScanToComplete();
+            //var scanId = StartSpiderScan();
+            //WaitForSpiderScanToComplete(scanId);
         }
 
         [TearDown]
@@ -86,9 +86,9 @@ namespace OWASP.ZAP.Selenium
             File.WriteAllBytes(reportFileName, ZapApi.core.htmlreport());
         }
 
-        private void EnablePassiveScan()
+        private void StartPassiveScan()
         {
-            //ENABLE PASSIVE SCANNER
+            //START PASSIVE SCANNER
             ZapApi.pscan.enableAllScanners();
         }
 
@@ -113,6 +113,30 @@ namespace OWASP.ZAP.Selenium
             }
 
             Console.WriteLine("--- Passive scan completed! ---");
+        }
+
+        private string StartSpiderScan()
+        {
+            //START SPIDER SCANNER
+            var apiResponse = ZapApi.spider.scan(TARGET_URL, "", "", "", "");
+            var scanId = ((ApiResponseElement)apiResponse).Value;
+            return scanId;
+        }
+
+        private void WaitForSpiderScanToComplete(string scanId)
+        {
+            int spiderProgress;
+            while (true)
+            {
+                Thread.Sleep(1000);
+                spiderProgress = int.Parse(((ApiResponseElement)ZapApi.spider.status(scanId)).Value);
+                Console.WriteLine("Spider progress: {0}%", spiderProgress);
+                if (spiderProgress >= 100)
+                    break;
+            }
+
+            Console.WriteLine("Spider complete");
+            Thread.Sleep(10000);
         }
     }
 }
