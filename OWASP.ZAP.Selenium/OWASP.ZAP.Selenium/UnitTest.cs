@@ -67,21 +67,29 @@ namespace OWASP.ZAP.Selenium
         {
             //NAVIGATE TO TARGET URL
             _driver.Navigate().GoToUrl("https://online.asb.co.nz/apply/join/asb");
+            EnablePassiveScan();
             WaitForPassiveScanToComplete();
         }
 
         [TearDown]
         public void AfterTestRun()
         {
-            WriteZapHtmlReport("C:\\Temp\\report.html", ZapApi.core.htmlreport());
+            WriteZapHtmlReport();
             ZapApi.Dispose();
             ZapApi.core.shutdown();
             _driver.Quit();
         }
 
-        private void WriteZapHtmlReport(string path, byte[] bytes)
+        private void WriteZapHtmlReport()
         {
-            File.WriteAllBytes(path, bytes);
+            var reportFileName = $"C:\\Temp\\report-{DateTime.Now:dd-MMM-yyyy-hh-mm-ss}.html";
+            File.WriteAllBytes(reportFileName, ZapApi.core.htmlreport());
+        }
+
+        private void EnablePassiveScan()
+        {
+            //ENABLE PASSIVE SCANNER
+            ZapApi.pscan.enableAllScanners();
         }
 
         private void WaitForPassiveScanToComplete()
@@ -90,11 +98,8 @@ namespace OWASP.ZAP.Selenium
 
             try
             {
-                //ENABLE PASSIVE SCANNER
-                ZapApi.pscan.enableAllScanners();
-
                 //GET ALL RECORDS TO SCAN
-                ApiResponseElement response = (ApiResponseElement)ZapApi.pscan.recordsToScan();
+                var response = (ApiResponseElement)ZapApi.pscan.recordsToScan();
 
                 //ITERATE UNTIL WE HAVE NONE
                 while (!response.Value.Equals("0"))
