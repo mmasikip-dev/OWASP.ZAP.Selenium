@@ -75,6 +75,7 @@ namespace OWASP.ZAP.Selenium
         {
             WriteZapHtmlReport("C:\\Temp\\report.html", ZapApi.core.htmlreport());
             ZapApi.Dispose();
+            ZapApi.core.shutdown();
             _driver.Quit();
         }
 
