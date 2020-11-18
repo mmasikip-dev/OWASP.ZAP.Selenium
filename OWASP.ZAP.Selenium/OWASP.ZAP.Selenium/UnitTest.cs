@@ -21,7 +21,7 @@ namespace OWASP.ZAP.Selenium
         const string ZAP_API_KEY = "5ste6eglkhh83lvu263jqju2o3";
         public static ClientApi ZapApi;
         private IWebDriver _driver;
-        private Process HeadlessZapProcess;
+        private Process Process;
 
         [SetUp]
         public void BeforeTestRun()
@@ -29,12 +29,12 @@ namespace OWASP.ZAP.Selenium
             var path = Path.Combine(Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Start_ZAP_Headless.bat");
 
             //START ZAP HEADLESS
-            HeadlessZapProcess = new Process();
-            HeadlessZapProcess.StartInfo.UseShellExecute = false;
-            HeadlessZapProcess.StartInfo.RedirectStandardOutput = true;
-            HeadlessZapProcess.StartInfo.FileName = path;
-            HeadlessZapProcess.StartInfo.Arguments = $"{ZAP_ADDRESS} {ZAP_PORT}";
-            HeadlessZapProcess.Start();
+            Process = new Process();
+            Process.StartInfo.UseShellExecute = false;
+            Process.StartInfo.RedirectStandardOutput = true;
+            Process.StartInfo.FileName = path;
+            Process.StartInfo.Arguments = $"{ZAP_ADDRESS} {ZAP_PORT}";
+            Process.Start();
 
             //INITIALIZE ZAP API
             ZapApi = new ClientApi(ZAP_ADDRESS, ZAP_PORT, ZAP_API_KEY);
